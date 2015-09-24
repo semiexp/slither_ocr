@@ -33,7 +33,13 @@ SlitherOCR::rect SlitherOCR::rect_bottom(rect &r)
 
 bool SlitherOCR::IsPossibleRect(rect &r)
 {
-	return dot_y[r.ul] + dot_x[r.ul] < dot_y[r.br] + dot_x[r.br] && dot_y[r.ur] - dot_x[r.ur] < dot_y[r.bl] - dot_x[r.bl];
+	if (dot_y[r.ul] + dot_x[r.ul] > dot_y[r.br] + dot_x[r.br]) return false;
+	if (dot_y[r.ur] - dot_x[r.ur] > dot_y[r.bl] - dot_x[r.bl]) return false;
+	if (next_point(r.ul, r.bl) != r.br) return false;
+	if (next_point(r.bl, r.br) != r.ur) return false;
+	if (next_point(r.br, r.ur) != r.ul) return false;
+	if (next_point(r.ur, r.ul) != r.bl) return false;
+	return true;
 }
 
 void SlitherOCR::Load(const char* fn)
