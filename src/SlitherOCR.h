@@ -58,6 +58,7 @@ private:
 	rect rect_right(rect &r);
 	rect rect_bottom(rect &r);
 	bool IsPossibleRect(rect &r);
+	bool IsPossibleNeighborhood(int center, std::vector<int> &nb);
 
 	cv::Mat ClipCell(rect &r, int size);
 	void ReduceNoiseFromClip(cv::Mat &pic);

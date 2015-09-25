@@ -42,6 +42,23 @@ bool SlitherOCR::IsPossibleRect(rect &r)
 	return true;
 }
 
+bool SlitherOCR::IsPossibleNeighborhood(int center, std::vector<int> &nb)
+{
+	static const double PI = 3.14159265358979323846;
+
+	for (int _j = 0; _j < nb.size(); ++_j) {
+		int j = nb[_j];
+		for (int _k = _j + 1; _k < nb.size(); ++_k) {
+			int k = nb[_k];
+			int angle = (atan2(dot_y[k] - dot_y[center], dot_x[k] - dot_x[center]) - atan2(dot_y[j] - dot_y[center], dot_x[j] - dot_x[center])) / PI * 180;
+			angle = (angle + 360) % 360;
+			angle %= 90;
+			if (25 <= angle && angle <= 65) return false;
+		}
+	}
+	return true;
+}
+
 void SlitherOCR::Load(const char* fn)
 {
 	image = cv::imread(fn, cv::IMREAD_GRAYSCALE);
@@ -298,21 +315,14 @@ void SlitherOCR::ComputeGridLine()
 		std::pair<int, int> largest_set(0, 0);
 		for (int mask = 1; mask < (1 << nearest.size()); mask += 2) {
 			int cnt = 0;
-			for (int _j = 0; _j < nearest.size(); ++_j) if (mask & (1 << _j)) {
-				int j = nearest[_j].second;
-				++cnt;
-				for (int _k = _j + 1; _k < nearest.size(); ++_k) if (mask & (1 << _k)) {
-					int k = nearest[_k].second;
-					int angle = (atan2(dot_y[k] - dot_y[i], dot_x[k] - dot_x[i]) - atan2(dot_y[j] - dot_y[i], dot_x[j] - dot_x[i])) / PI * 180;
-					angle = (angle + 360) % 360;
-					angle %= 90;
-					if (25 <= angle && angle <= 65) goto invalid;
-				}
-			}
-			largest_set = std::max(largest_set, std::make_pair(cnt, mask));
 
-		invalid:
-			continue;
+			std::vector<int> nb;
+			for (int _j = 0; _j < nearest.size(); ++_j) if (mask & (1 << _j)) {
+				nb.push_back(nearest[_j].second);
+				++cnt;
+			}
+
+			if (IsPossibleNeighborhood(i, nb)) largest_set = std::max(largest_set, std::make_pair(cnt, mask));
 		}
 
 		for (int j = 0; j < nearest.size(); ++j) {
