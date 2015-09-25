@@ -31,6 +31,22 @@ SlitherOCR::rect SlitherOCR::rect_bottom(rect &r)
 	return ret;
 }
 
+void SlitherOCR::remove_edge(int p, int q)
+{
+	for (int i = 0; i < grid[p].size(); ++i) {
+		if (grid[p][i] == q) {
+			grid[p].erase(grid[p].begin() + i);
+			break;
+		}
+	}
+	for (int i = 0; i < grid[q].size(); ++i) {
+		if (grid[q][i] == p) {
+			grid[q].erase(grid[q].begin() + i);
+			break;
+		}
+	}
+}
+
 bool SlitherOCR::IsPossibleRect(rect &r)
 {
 	if (dot_y[r.ul] + dot_x[r.ul] > dot_y[r.br] + dot_x[r.br]) return false;
@@ -349,6 +365,38 @@ void SlitherOCR::ComputeGridLine()
 		for (int j = 0; j < graph_aux.size(); ++j) {
 			if (j != 0 && graph_aux[j].second == graph_aux[j - 1].second) continue;
 			grid[i].push_back(graph_aux[j].second);
+		}
+	}
+}
+
+void SlitherOCR::RemoveImproperEdges()
+{
+	for (int i = 0; i < grid.size(); ++i) {
+		int max_cnt = -1, cand = 0;
+
+		for (int mask = 0; mask < (1 << grid[i].size()); ++mask) {
+			int cnt = 0;
+			std::vector<int> nb;
+
+			for (int j = 0; j < grid[i].size(); ++j) if (mask & (1 << j)) {
+				++cnt;
+				nb.push_back(grid[i][j]);
+			}
+
+			if (IsPossibleNeighborhood(i, nb)) {
+				if (max_cnt < cnt) {
+					max_cnt = cnt;
+					cand = mask;
+				} else if (max_cnt == cnt) {
+					cand |= mask;
+				}
+			}
+		}
+
+		for (int j = (int)grid[i].size() - 1; j >= 0; --j) {
+			if (!(cand & (1 << j))) {
+				remove_edge(i, grid[i][j]);
+			}
 		}
 	}
 }

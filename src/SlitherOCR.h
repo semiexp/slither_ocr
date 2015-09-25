@@ -37,6 +37,7 @@ public:
 	int ComputeThresholdForDetectDots();
 	void ExcludeFalseDots();
 	void ComputeGridLine();
+	void RemoveImproperEdges();
 	void ComputeGridCell();
 
 	void Show();
@@ -57,9 +58,11 @@ private:
 	}
 	rect rect_right(rect &r);
 	rect rect_bottom(rect &r);
+	void remove_edge(int p, int q);
+
 	bool IsPossibleRect(rect &r);
 	bool IsPossibleNeighborhood(int center, std::vector<int> &nb);
-
+	
 	cv::Mat ClipCell(rect &r, int size);
 	void ReduceNoiseFromClip(cv::Mat &pic);
 
