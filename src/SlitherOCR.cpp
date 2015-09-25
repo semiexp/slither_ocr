@@ -47,8 +47,15 @@ void SlitherOCR::Load(const char* fn)
 	image = cv::imread(fn, cv::IMREAD_GRAYSCALE);
 
 	cv::Mat image_tmp;
-	resize(image, image_tmp, cv::Size(), 0.5, 0.5);
+	resize(image, image_tmp, cv::Size(), 1, 1);
 	image = image_tmp;
+	img_height = image.rows;
+	img_width = image.cols;
+}
+
+void SlitherOCR::Load(cv::Mat &img)
+{
+	cvtColor(img, image, CV_RGB2GRAY);
 	img_height = image.rows;
 	img_width = image.cols;
 }

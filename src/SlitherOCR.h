@@ -31,6 +31,7 @@ public:
 	SlitherOCR() : data(nullptr), problem_height(-1), problem_width(-1) {}
 	~SlitherOCR() { if (data) delete[] data; }
 	void Load(const char* fn);
+	void Load(cv::Mat &img);
 	void ExtractBinary();
 	void DetectDots();
 	int ComputeThresholdForDetectDots();
