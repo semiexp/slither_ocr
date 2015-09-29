@@ -83,7 +83,6 @@ private:
 	void ReduceNoiseFromClip(cv::Mat &pic);
 
 	int Recognize(cv::Mat &pic);
-	void MarkDot(int y, int x);
 
 	static const int CLIP_SIZE = 24;
 

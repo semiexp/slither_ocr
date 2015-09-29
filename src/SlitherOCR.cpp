@@ -99,16 +99,6 @@ void SlitherOCR::Show()
 	cv::imshow("ocr", image);
 }
 
-void SlitherOCR::MarkDot(int y, int x)
-{
-	if (y < 0 || x < 0 || y >= img_height || x >= img_width || at(y, x) != 1) return;
-	at(y, x) = 2;
-	MarkDot(y - 1, x);
-	MarkDot(y + 1, x);
-	MarkDot(y, x - 1);
-	MarkDot(y, x + 1);
-}
-
 void SlitherOCR::ExtractBinary()
 {
 	cv::Mat image_tmp;
@@ -305,8 +295,6 @@ void SlitherOCR::ExcludeFalseDots()
 	dot_x2.swap(dot_x);
 	dot_rep_y2.swap(dot_rep_y);
 	dot_rep_x2.swap(dot_rep_x);
-
-	for (int i = 0; i < dot_y2.size(); ++i) MarkDot(dot_rep_y2[i], dot_rep_x2[i]);
 }
 
 void SlitherOCR::ComputeGridLine()
@@ -483,10 +471,10 @@ cv::Mat SlitherOCR::ClipCell(rect &r, int size)
 			double px = (dot_x[r.ul] * (1 - x_ratio) + dot_x[r.ur] * x_ratio) * (1 - y_ratio) + (dot_x[r.bl] * (1 - x_ratio) + dot_x[r.br] * x_ratio) * y_ratio;
 
 			double cnt = 0;
-			if (at((int)py + 0, (int)px + 0) == 1) cnt += (1 - (py - (int)py)) * (1 - (px - (int)px));
-			if (at((int)py + 0, (int)px + 1) == 1) cnt += (1 - (py - (int)py)) * (px - (int)px);
-			if (at((int)py + 1, (int)px + 0) == 1) cnt += (py - (int)py) * (1 - (px - (int)px));
-			if (at((int)py + 1, (int)px + 1) == 1) cnt += (py - (int)py) * (px - (int)px);
+			if (at((int)py + 0, (int)px + 0) && !is_dot[units[id((int)py + 0, (int)px + 0)]]) cnt += (1 - (py - (int)py)) * (1 - (px - (int)px));
+			if (at((int)py + 0, (int)px + 1) && !is_dot[units[id((int)py + 0, (int)px + 1)]]) cnt += (1 - (py - (int)py)) * (px - (int)px);
+			if (at((int)py + 1, (int)px + 0) && !is_dot[units[id((int)py + 1, (int)px + 0)]]) cnt += (py - (int)py) * (1 - (px - (int)px));
+			if (at((int)py + 1, (int)px + 1) && !is_dot[units[id((int)py + 1, (int)px + 1)]]) cnt += (py - (int)py) * (px - (int)px);
 
 			ret.at<uchar>(y, x) = (cnt >= 0.5 ? 0 : 255);
 		}
