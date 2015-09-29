@@ -50,6 +50,7 @@ public:
 	void ComputeGridLine();
 	void RemoveImproperEdges();
 	void ComputeGridCell();
+	int RetriveUncaughtDots();
 
 	void Show();
 

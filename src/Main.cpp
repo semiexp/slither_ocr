@@ -12,7 +12,12 @@ int main(int argc, const char* argv[])
 	ocr.ExtractBinary();
 	ocr.DetectDots();
 	ocr.ExcludeFalseDots();
-	ocr.ComputeGridLine();
+
+	while (1) {
+		ocr.ComputeGridLine();
+		if (!ocr.RetriveUncaughtDots()) break;
+	}
+
 	ocr.ComputeGridCell();
 	ocr.Show();
 

@@ -231,7 +231,8 @@ void SlitherOCR::DetectDots()
 					dot_rep_y.push_back(y);
 					dot_rep_x.push_back(x);
 					dot_size.push_back(dots);
-					is_dot[unit_id] = true;
+					// is_dot is modified in ExcludeFalseDots
+					// is_dot[unit_id] = true;
 				}
 			}
 		}
@@ -298,6 +299,7 @@ void SlitherOCR::ExcludeFalseDots()
 			dot_x2.push_back(dot_x[i]);
 			dot_rep_y2.push_back(dot_rep_y[i]);
 			dot_rep_x2.push_back(dot_rep_x[i]);
+			is_dot[units[id(dot_rep_y[i], dot_rep_x[i])]] = true;
 		}
 	}
 	dot_y2.swap(dot_y);
@@ -310,6 +312,7 @@ void SlitherOCR::ComputeGridLine()
 {
 	static const double PI = 3.14159265358979323846;
 
+	grid.clear();
 	for (int i = 0; i < dot_y.size(); ++i) grid.push_back(std::vector<int>());
 
 	for (int i = 0; i < dot_y.size(); ++i) {
@@ -411,6 +414,44 @@ void SlitherOCR::RemoveImproperEdges()
 			}
 		}
 	}
+}
+
+int SlitherOCR::RetriveUncaughtDots()
+{
+	int new_dots = 0;
+
+	for (int p = 0; p < grid.size(); ++p) {
+		for (int q : grid[p]) {
+			int cy = dot_y[p] * 2 - dot_y[q], cx = dot_x[p] * 2 - dot_x[q];
+
+			if (cy < 0 || cx < 0 || img_height <= cy || img_width <= cx || !at(cy, cx)) continue;
+
+			int uid = units[id(cy, cx)];
+			if (is_dot[uid]) continue;
+
+			int p_id = units[id(dot_rep_y[p], dot_rep_x[p])];
+			int p_height = unit_boundary[p_id].bottom - unit_boundary[p_id].top + 1;
+			int p_width = unit_boundary[p_id].right - unit_boundary[p_id].left + 1;
+			int u_height = unit_boundary[uid].bottom - unit_boundary[uid].top + 1;
+			int u_width = unit_boundary[uid].right - unit_boundary[uid].left + 1;
+
+			double height_ratio = (double)p_height / u_height;
+			double width_ratio = (double)p_width / u_width;
+			if (height_ratio < 1) height_ratio = 1 / height_ratio;
+			if (width_ratio < 1) width_ratio = 1 / width_ratio;
+
+			if (std::max(height_ratio, width_ratio) > 1.2) continue;
+
+			is_dot[uid] = true;
+			dot_y.push_back((unit_boundary[uid].top + unit_boundary[uid].bottom) / 2);
+			dot_x.push_back((unit_boundary[uid].left + unit_boundary[uid].right) / 2);
+			dot_rep_y.push_back(cy);
+			dot_rep_x.push_back(cx);
+			++new_dots;
+		}
+	}
+
+	return new_dots;
 }
 
 void SlitherOCR::ComputeGridCell()
