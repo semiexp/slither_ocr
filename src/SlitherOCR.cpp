@@ -95,8 +95,17 @@ void SlitherOCR::Load(cv::Mat &img)
 
 void SlitherOCR::Show()
 {
+	cv::Mat image_tmp;
+	resize(image, image_tmp, cv::Size(), 0.3, 0.3);
+
+	for (int p = 0; p < grid.size(); ++p) {
+		for (int q : grid[p]) {
+			line(image_tmp, cv::Point(dot_x[p] * 0.3, dot_y[p] * 0.3), cv::Point(dot_x[q] * 0.3, dot_y[q] * 0.3), cv::Scalar(0), 1);
+		}
+	}
+
 	cv::namedWindow("ocr");
-	cv::imshow("ocr", image);
+	cv::imshow("ocr", image_tmp);
 }
 
 void SlitherOCR::ExtractBinary()
@@ -350,7 +359,6 @@ void SlitherOCR::ComputeGridLine()
 			if (!(largest_set.second & (1 << j))) continue;
 
 			int pt = nearest[j].second;
-			line(image, cv::Point(dot_x[i], dot_y[i]), cv::Point(dot_x[pt], dot_y[pt]), cv::Scalar(0), 1);
 
 			grid[i].push_back(pt);
 			grid[pt].push_back(i);
