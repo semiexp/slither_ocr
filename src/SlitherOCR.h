@@ -7,7 +7,7 @@ struct unionfind
 {
 	std::vector<int> parent, val;
 
-	unionfind(int n) {
+	void init(int n) {
 		parent.clear(); val.clear();
 		for (int i = 0; i < n; ++i) parent.push_back(-1);
 		for (int i = 0; i < n; ++i) val.push_back(-1);
@@ -57,8 +57,13 @@ public:
 	void LoadTrainedData(const char *filed);
 
 private:
-	struct rect {
-		int ul, ur, bl, br; // (Upper / Bottom) (Left / Right)
+	union rect {
+		struct {
+			int ul, ur, bl, br; // (Upper / Bottom) (Left / Right)
+		};
+		struct {
+			int top, bottom, left, right;
+		};
 	};
 
 	int& at(int y, int x) { return data[y * img_width + x]; }
@@ -89,6 +94,10 @@ private:
 	int *data;
 	std::vector<int> dot_y, dot_x, dot_rep_y, dot_rep_x;
 	std::vector<std::vector<int> > grid;
+
+	unionfind units;
+	std::vector<rect> unit_boundary;
+	std::vector<bool> is_dot;
 
 	cv::Ptr<cv::ml::SVM> svm;
 };

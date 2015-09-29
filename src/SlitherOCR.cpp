@@ -182,6 +182,8 @@ void SlitherOCR::DetectDots()
 	std::fill(visited, visited + img_height * img_width, false);
 
 	std::vector<int> dot_size;
+	
+	units.init(img_height * img_width);
 
 	for (int y = 0; y < img_height; ++y) {
 		for (int x = 0; x < img_width; ++x) {
@@ -204,11 +206,23 @@ void SlitherOCR::DetectDots()
 					right = std::max(right, tx);
 					++dots;
 
+					units.join(id(y, x), id(ty, tx));
 					Q.push(std::make_pair(ty + 1, tx));
 					Q.push(std::make_pair(ty - 1, tx));
 					Q.push(std::make_pair(ty, tx + 1));
 					Q.push(std::make_pair(ty, tx - 1));
 				}
+
+				rect boundary;
+				boundary.left = left;
+				boundary.right = right;
+				boundary.top = top;
+				boundary.bottom = bottom;
+
+				int unit_id = unit_boundary.size();
+				units[id(y, x)] = unit_id;
+				unit_boundary.push_back(boundary);
+				is_dot.push_back(false);
 
 				int height = bottom - top + 1, width = right - left + 1;
 
@@ -218,6 +232,7 @@ void SlitherOCR::DetectDots()
 					dot_rep_y.push_back(y);
 					dot_rep_x.push_back(x);
 					dot_size.push_back(dots);
+					is_dot[unit_id] = true;
 				}
 			}
 		}
@@ -257,7 +272,8 @@ void SlitherOCR::ExcludeFalseDots()
 	}
 	sort(edges.begin(), edges.end());
 
-	unionfind uf(dot_y.size());
+	unionfind uf;
+	uf.init(dot_y.size());
 	int med = -1, n_groups = dot_y.size();
 	for (auto e : edges) {
 		int p = e.second.first, q = e.second.second;
