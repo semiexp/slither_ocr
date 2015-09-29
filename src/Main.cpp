@@ -17,7 +17,8 @@ int main(int argc, const char* argv[])
 		ocr.ComputeGridLine();
 		if (!ocr.RetriveUncaughtDots()) break;
 	}
-
+	
+	ocr.RemoveImproperEdges();
 	ocr.ComputeGridCell();
 	ocr.Show();
 
