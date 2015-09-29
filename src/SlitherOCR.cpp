@@ -273,7 +273,7 @@ void SlitherOCR::ExcludeFalseDots()
 
 	std::pair<int, int> largest_group(-1, -1);
 	for (int i = 0; i < dot_y.size(); ++i) {
-		if (uf.val[i] < 0) largest_group = std::max(largest_group, std::make_pair(-uf.val[i], i));
+		if (i == uf.root(i)) largest_group = std::max(largest_group, std::make_pair(uf.union_size(i), i));
 	}
 
 	std::vector<int> dot_y2, dot_x2, dot_rep_y2, dot_rep_x2;

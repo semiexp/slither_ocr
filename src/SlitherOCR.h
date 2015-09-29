@@ -5,23 +5,34 @@
 
 struct unionfind
 {
-	std::vector<int> val;
+	std::vector<int> parent, val;
 
 	unionfind(int n) {
+		parent.clear(); val.clear();
+		for (int i = 0; i < n; ++i) parent.push_back(-1);
 		for (int i = 0; i < n; ++i) val.push_back(-1);
 	}
 
 	int root(int p) {
-		return val[p] < 0 ? p : (val[p] = root(val[p]));
+		return parent[p] < 0 ? p : (parent[p] = root(parent[p]));
 	}
 
 	bool join(int p, int q) {
 		p = root(p);
 		q = root(q);
 		if (p == q) return false;
-		val[p] += val[q];
-		val[q] = p;
+		parent[p] += parent[q];
+		parent[q] = p;
 		return true;
+	}
+
+	int union_size(int p) {
+		return -parent[root(p)];
+	}
+
+	// NOTE: [x] can be incorrect value after join(x, y)
+	int &operator[](const int idx) {
+		return val[root(idx)];
 	}
 };
 
