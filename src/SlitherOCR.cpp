@@ -472,40 +472,45 @@ void SlitherOCR::ComputeGridCell()
 	scan_y = base;
 
 	std::vector<std::vector<int> > problem;
+	cells.clear();
 
-	for (int y = 0;; ++y) {
-		problem_height = std::max(problem_height, y + 1);
-		scan_x = scan_y;
-
-		std::vector<int> problem_line;
-		for (int x = 0;; ++x) {
-			problem_width = std::max(problem_width, x + 1);
-
-			if (true) {
-				cv::Mat pic = ClipCell(scan_x, CLIP_SIZE);
-				ReduceNoiseFromClip(pic);
-
-				int v = Recognize(pic);
-				problem_line.push_back(v);
-			}
-			//if (grid[scan_x.ul].size() > grid[scan_x.ur].size()) break;
-			scan_x = rect_right(scan_x);
-			if (!IsPossibleRect(scan_x)) break;
+	for (rect scan_y = base; IsPossibleRect(scan_y); scan_y = rect_bottom(scan_y)) {
+		std::vector<rect> cell_line;
+		for (rect scan_x = scan_y; IsPossibleRect(scan_x); scan_x = rect_right(scan_x)) {
+			cell_line.push_back(scan_x);
 		}
+		cells.push_back(cell_line);
+	}
+}
 
-		problem.push_back(problem_line);
+std::vector<std::vector<int> > SlitherOCR::RecognizeProblem()
+{
+	std::vector<std::vector<int> > ret;
+	problem_height = cells.size();
+	problem_width = 0;
 
-		//if (grid[scan_y.ul].size() > grid[scan_y.bl].size()) break;
-		scan_y = rect_bottom(scan_y);
-		if (!IsPossibleRect(scan_y)) break;
+	for (auto &line : cells) {
+		std::vector<int> ret_line;
+		problem_width = std::max(problem_width, (int)line.size());
+
+		for (rect &c : line) {
+			cv::Mat pic = ClipCell(c, CLIP_SIZE);
+			ReduceNoiseFromClip(pic);
+
+			int v = Recognize(pic);
+			ret_line.push_back(v);
+		}
+		ret.push_back(ret_line);
 	}
 
 	std::cout << problem_height << " " << problem_width << std::endl;
-	for (std::vector<int> &line : problem) {
+	for (std::vector<int> &line : ret) {
 		for (int v : line) std::cout << (char)(v == -1 ? '-' : (v + '0'));
 		std::cout << std::endl;
 	}
 	std::cout << std::endl;
+
+	return ret;
 }
 
 cv::Mat SlitherOCR::ClipCell(rect &r, int size)

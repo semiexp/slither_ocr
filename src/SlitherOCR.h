@@ -51,6 +51,7 @@ public:
 	void RemoveImproperEdges();
 	void ComputeGridCell();
 	int RetriveUncaughtDots();
+	std::vector<std::vector<int> > RecognizeProblem();
 
 	void Show();
 
@@ -94,6 +95,7 @@ private:
 	int *data;
 	std::vector<int> dot_y, dot_x, dot_rep_y, dot_rep_x;
 	std::vector<std::vector<int> > grid;
+	std::vector<std::vector<rect> > cells;
 
 	unionfind units;
 	std::vector<rect> unit_boundary;

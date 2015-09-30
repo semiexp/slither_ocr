@@ -20,6 +20,7 @@ int main(int argc, const char* argv[])
 	
 	ocr.RemoveImproperEdges();
 	ocr.ComputeGridCell();
+	ocr.RecognizeProblem();
 	ocr.Show();
 
 	cv::waitKey(0);
