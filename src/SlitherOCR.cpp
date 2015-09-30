@@ -486,6 +486,8 @@ void SlitherOCR::ComputeGridCell()
 std::vector<std::vector<int> > SlitherOCR::RecognizeProblem()
 {
 	std::vector<std::vector<int> > ret;
+	int problem_height, problem_width;
+
 	problem_height = cells.size();
 	problem_width = 0;
 
@@ -519,9 +521,15 @@ std::vector<std::vector<int> > SlitherOCR::RecognizeProblem()
 		ret.push_back(ret_line);
 	}
 
+	for (int t = 0; t < ori; ++t) {
+		ret = RotateProblemCounterClockwise(ret);
+		problem_height = ret.size();
+		problem_width = ret[0].size();
+	}
+
 	std::cout << problem_height << " " << problem_width << std::endl;
 	for (std::vector<int> &line : ret) {
-		for (int v : line) std::cout << (char)(v == -1 ? '-' : (v + '0'));
+		for (int v : line) std::cout << (char)(v == -2 ? '*' : v == -1 ? '-' : (v + '0'));
 		std::cout << std::endl;
 	}
 	std::cout << std::endl;
@@ -564,6 +572,29 @@ cv::Mat SlitherOCR::RotateCounterClockwise(cv::Mat &pic)
 
 			ret.at<uchar>(y, x) = pic.at<uchar>(y2, x2);
 		}
+	}
+
+	return ret;
+}
+
+std::vector<std::vector<int> > SlitherOCR::RotateProblemCounterClockwise(std::vector<std::vector<int> > &problem)
+{
+	int height = problem.size(), width = 0;
+	for (auto &line : problem) width = std::max(width, (int)line.size());
+
+	std::vector<std::vector<int> > ret;
+	for (int y = 0; y < width; ++y) {
+		std::vector<int> line;
+
+		for (int x = 0; x < height; ++x) {
+			int y2 = x;
+			int x2 = width - 1 - y;
+			
+			if (problem.size() <= y2 || problem[y2].size() <= x2) line.push_back(-2);
+			else line.push_back(problem[y2][x2]);
+		}
+
+		ret.push_back(line);
 	}
 
 	return ret;

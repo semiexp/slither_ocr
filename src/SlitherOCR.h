@@ -39,7 +39,7 @@ struct unionfind
 class SlitherOCR
 {
 public:
-	SlitherOCR() : data(nullptr), problem_height(-1), problem_width(-1) {}
+	SlitherOCR() : data(nullptr) {}
 	~SlitherOCR() { if (data) delete[] data; }
 	void Load(const char* fn);
 	void Load(cv::Mat &img);
@@ -85,6 +85,7 @@ private:
 	
 	cv::Mat ClipCell(rect &r, int size);
 	cv::Mat RotateCounterClockwise(cv::Mat &pic);
+	std::vector<std::vector<int> > RotateProblemCounterClockwise(std::vector<std::vector<int> > &problem);
 
 	void ReduceNoiseFromClip(cv::Mat &pic);
 
@@ -95,8 +96,7 @@ private:
 
 	cv::Mat image;
 	int img_height, img_width;
-	int problem_height, problem_width;
-
+	
 	int *data;
 	std::vector<int> dot_y, dot_x, dot_rep_y, dot_rep_x;
 	std::vector<std::vector<int> > grid;
