@@ -636,7 +636,7 @@ void SlitherOCR::ReduceNoiseFromClip(cv::Mat &pic)
 
 				int height = bottom - top + 1, width = right - left + 1;
 
-				if (height < pic.rows / 2 && width < pic.cols / 2) {
+				if (height < pic.rows / 3 && width < pic.cols / 3) {
 					// too small: presumably noise
 					for (auto &p : points) {
 						pic.at<uchar>(p.first, p.second) = 255;
