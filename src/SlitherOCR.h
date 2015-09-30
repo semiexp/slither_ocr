@@ -56,7 +56,9 @@ public:
 	void Show();
 
 	void Train(const char* input_file, const char* output_file);
-	void LoadTrainedData(const char *filed);
+	void TrainOrientation(const char* input_file, const char* output_file);
+	void LoadTrainedData(const char *file);
+	void LoadTrainedOrientationData(const char *file);
 
 private:
 	union rect {
@@ -82,9 +84,12 @@ private:
 	bool IsPossibleNeighborhood(int center, std::vector<int> &nb);
 	
 	cv::Mat ClipCell(rect &r, int size);
+	cv::Mat RotateCounterClockwise(cv::Mat &pic);
+
 	void ReduceNoiseFromClip(cv::Mat &pic);
 
 	int Recognize(cv::Mat &pic);
+	int RecognizeOrientation(cv::Mat &pic);
 
 	static const int CLIP_SIZE = 24;
 
@@ -102,4 +107,5 @@ private:
 	std::vector<bool> is_dot;
 
 	cv::Ptr<cv::ml::SVM> svm;
+	cv::Ptr<cv::ml::SVM> svm_ori;
 };

@@ -489,6 +489,21 @@ std::vector<std::vector<int> > SlitherOCR::RecognizeProblem()
 	problem_height = cells.size();
 	problem_width = 0;
 
+	int ori_likelihood[4] = { 0, 0, 0, 0 };
+
+	for (auto &line : cells) {
+		for (rect &c : line) {
+			cv::Mat pic = ClipCell(c, CLIP_SIZE);
+			ReduceNoiseFromClip(pic);
+
+			int ori = RecognizeOrientation(pic);
+			if (0 <= ori && ori <= 3) ++ori_likelihood[ori];
+		}
+	}
+
+	int ori = 0;
+	for (int i = 1; i < 4; ++i) if (ori_likelihood[ori] < ori_likelihood[i]) ori = i;
+
 	for (auto &line : cells) {
 		std::vector<int> ret_line;
 		problem_width = std::max(problem_width, (int)line.size());
@@ -497,6 +512,7 @@ std::vector<std::vector<int> > SlitherOCR::RecognizeProblem()
 			cv::Mat pic = ClipCell(c, CLIP_SIZE);
 			ReduceNoiseFromClip(pic);
 
+			for (int t = 0; t < ori; ++t) pic = RotateCounterClockwise(pic);
 			int v = Recognize(pic);
 			ret_line.push_back(v);
 		}
@@ -531,6 +547,22 @@ cv::Mat SlitherOCR::ClipCell(rect &r, int size)
 			if (at((int)py + 1, (int)px + 1) && !is_dot[units[id((int)py + 1, (int)px + 1)]]) cnt += (py - (int)py) * (px - (int)px);
 
 			ret.at<uchar>(y, x) = (cnt >= 0.5 ? 0 : 255);
+		}
+	}
+
+	return ret;
+}
+
+cv::Mat SlitherOCR::RotateCounterClockwise(cv::Mat &pic)
+{
+	cv::Mat ret(cv::Size(pic.cols, pic.rows), CV_8UC1);
+
+	for (int y = 0; y < pic.rows; ++y) {
+		for (int x = 0; x < pic.cols; ++x) {
+			int y2 = x;
+			int x2 = pic.rows - 1 - y;
+
+			ret.at<uchar>(y, x) = pic.at<uchar>(y2, x2);
 		}
 	}
 
@@ -644,9 +676,78 @@ void SlitherOCR::Train(const char *input_file, const char *output_file)
 	std::cerr << "train end" << std::endl;
 }
 
+void SlitherOCR::TrainOrientation(const char *input_file, const char *output_file)
+{
+	std::ifstream ifs(input_file);
+
+	std::vector<std::vector<int> > data;
+	std::vector<int> expected;
+
+	for (;;) {
+		std::string line;
+		int ans;
+
+		ifs >> ans;
+		if (ans == -1) break;
+
+		std::vector<int> pic;
+		for (int i = 0; i < CLIP_SIZE; ++i) {
+			ifs >> line;
+			for (int j = 0; j < CLIP_SIZE; ++j) pic.push_back(line[j] == '#' ? 1 : 0);
+		}
+
+		for (int t = 0; t < 4; ++t) {
+			data.push_back(pic);
+
+			// rotate clockwise by 90 degree
+			std::vector<int> pic2;
+			for (int i = 0; i < CLIP_SIZE; ++i) {
+				for (int j = 0; j < CLIP_SIZE; ++j) {
+					int y = CLIP_SIZE - j;
+					int x = i;
+					pic2.push_back(pic[y * CLIP_SIZE + x]);
+				}
+			}
+
+			pic.swap(pic2);
+
+			if (ans != 0) {
+				expected.push_back(t);
+			} else {
+				expected.push_back(4); // 0 can't be used for orientation detection
+			}
+		}
+	}
+
+	cv::Mat data_mat(data.size(), CLIP_SIZE * CLIP_SIZE, CV_32F);
+	for (int i = 0; i < data.size(); ++i) {
+		for (int j = 0; j < CLIP_SIZE * CLIP_SIZE; ++j) {
+			data_mat.at<float>(i, j) = data[i][j];
+		}
+	}
+	cv::Mat expected_mat(expected.size(), 1, CV_32S);
+	for (int i = 0; i < data.size(); ++i) {
+		expected_mat.at<int>(i, 0) = expected[i];
+	}
+
+	svm_ori = cv::ml::SVM::create();
+	svm_ori->setType(cv::ml::SVM::C_SVC);
+	svm_ori->setKernel(cv::ml::SVM::RBF);
+	svm_ori->setGamma(0.05);
+
+	svm_ori->train(data_mat, cv::ml::ROW_SAMPLE, expected_mat);
+	svm_ori->save(output_file);
+	std::cerr << "ori train end" << std::endl;
+}
+
 void SlitherOCR::LoadTrainedData(const char *file)
 {
 	svm = cv::Algorithm::load<cv::ml::SVM>(file);
+}
+
+void SlitherOCR::LoadTrainedOrientationData(const char *file)
+{
+	svm_ori = cv::Algorithm::load<cv::ml::SVM>(file);
 }
 
 int SlitherOCR::Recognize(cv::Mat &pic)
@@ -667,4 +768,24 @@ int SlitherOCR::Recognize(cv::Mat &pic)
 		}
 	}
 	return svm->predict(input);
+}
+
+int SlitherOCR::RecognizeOrientation(cv::Mat &pic)
+{
+	int n_dots = 0;
+	for (int i = 0; i < CLIP_SIZE; ++i) {
+		for (int j = 0; j < CLIP_SIZE; ++j) {
+			if (pic.at<uchar>(i, j) == 0) ++n_dots;
+		}
+	}
+
+	if (n_dots < 10) return 4;
+
+	cv::Mat input(1, CLIP_SIZE * CLIP_SIZE, CV_32F);
+	for (int i = 0; i < CLIP_SIZE; ++i) {
+		for (int j = 0; j < CLIP_SIZE; ++j) {
+			input.at<float>(0, i * CLIP_SIZE + j) = (pic.at<uchar>(i, j) == 0 ? 1 : 0);
+		}
+	}
+	return svm_ori->predict(input);
 }
