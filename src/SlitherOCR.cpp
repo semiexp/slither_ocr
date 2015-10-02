@@ -93,6 +93,22 @@ void SlitherOCR::Load(cv::Mat &img)
 	img_width = image.cols;
 }
 
+std::vector<std::vector<int> > SlitherOCR::OCR()
+{
+	ExtractBinary();
+	DetectDots();
+	ExcludeFalseDots();
+
+	while (1) {
+		ComputeGridLine();
+		if (!RetriveUncaughtDots()) break;
+	}
+
+	RemoveImproperEdges();
+	ComputeGridCell();
+	return RecognizeProblem();
+}
+
 void SlitherOCR::Show()
 {
 	cv::Mat image_tmp;
@@ -521,18 +537,15 @@ std::vector<std::vector<int> > SlitherOCR::RecognizeProblem()
 		ret.push_back(ret_line);
 	}
 
+	for (std::vector<int> &line : ret) {
+		while (line.size() < problem_width) line.push_back(-2);
+	}
+
 	for (int t = 0; t < ori; ++t) {
 		ret = RotateProblemCounterClockwise(ret);
 		problem_height = ret.size();
 		problem_width = ret[0].size();
 	}
-
-	std::cout << problem_height << " " << problem_width << std::endl;
-	for (std::vector<int> &line : ret) {
-		for (int v : line) std::cout << (char)(v == -2 ? '*' : v == -1 ? '-' : (v + '0'));
-		std::cout << std::endl;
-	}
-	std::cout << std::endl;
 
 	return ret;
 }

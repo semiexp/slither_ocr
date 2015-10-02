@@ -43,6 +43,9 @@ public:
 	~SlitherOCR() { if (data) delete[] data; }
 	void Load(const char* fn);
 	void Load(cv::Mat &img);
+
+	std::vector<std::vector<int> > OCR();
+
 	void ExtractBinary();
 	void DetectDots();
 	int ComputeThresholdForDetectDots();
