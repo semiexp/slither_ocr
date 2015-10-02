@@ -278,29 +278,44 @@ void SlitherOCR::DetectDots()
 
 void SlitherOCR::ExcludeFalseDots()
 {
+	std::vector<bool> visited;
+	std::vector<std::pair<int, int> > distance; // (distance, from)
 	std::vector<std::pair<int, std::pair<int, int> > > edges;
+
 	for (int i = 0; i < dot_y.size(); ++i) {
-		for (int j = i + 1; j < dot_y.size(); ++j) {
-			edges.push_back(std::make_pair(
-				(dot_y[i] - dot_y[j]) * (dot_y[i] - dot_y[j]) + (dot_x[i] - dot_x[j]) * (dot_x[i] - dot_x[j]),
-				std::make_pair(i, j)));
+		visited.push_back(false);
+		distance.push_back(std::make_pair(1 << 30, -1));
+	}
+
+	distance[0] = std::make_pair(0, -1);
+
+	for (int i = 0; i < dot_y.size(); ++i) {
+		int bp = -1;
+		for (int j = 0; j < distance.size(); ++j) if (!visited[j]) {
+			if (bp == -1 || distance[bp] > distance[j]) bp = j;
+		}
+
+		if (distance[bp].second != -1) {
+			edges.push_back(std::make_pair(distance[bp].first, std::make_pair(distance[bp].second, bp)));
+		}
+
+		visited[bp] = true;
+		for (int j = 0; j < distance.size(); ++j) if (!visited[j]) {
+			distance[j] = std::min(distance[j], std::make_pair(
+				(dot_y[j] - dot_y[bp]) * (dot_y[j] - dot_y[bp]) + (dot_x[j] - dot_x[bp]) * (dot_x[j] - dot_x[bp]),
+				bp));
 		}
 	}
-	sort(edges.begin(), edges.end());
 
+	int med = edges[edges.size() / 2].first;
 	unionfind uf;
 	uf.init(dot_y.size());
-	int med = -1, n_groups = dot_y.size();
-	for (auto e : edges) {
-		int p = e.second.first, q = e.second.second;
-		if (med != -1 && e.first > med * 1.4) {
-			break;
-		}
-		if (uf.join(p, q)) {
-			if (--n_groups == dot_y.size() / 2) {
-				med = e.first;
-			}
-		}
+
+	sort(edges.begin(), edges.end());
+	for (int i = 0; i < edges.size(); ++i) {
+		if (edges[i].first > med * 1.4) break;
+
+		uf.join(edges[i].second.first, edges[i].second.second);
 	}
 
 	std::pair<int, int> largest_group(-1, -1);
